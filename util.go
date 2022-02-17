@@ -20,11 +20,8 @@ func getScriptByName(name string) (*databasesCacheValue, *scriptsCacheValue, err
 
 	script := scriptsValue.(scriptsCacheValue)
 
-	databasesKey := script.database
-	if globalConfig.Environment != "" {
-		databasesKey = fmt.Sprintf("%s:%s", script.database, globalConfig.Environment)
-	}
-	databasesValue, ok := databasesCache.Load(databasesKey)
+	databasesCacheKey := getDatabasesCacheKey(script.database)
+	databasesValue, ok := databasesCache.Load(databasesCacheKey)
 	if !ok {
 		return nil, nil, errors.New("not found database")
 	}
@@ -91,18 +88,14 @@ func loadDatabasesFile() error {
 			db.SetConnMaxIdleTime(seconds * time.Second)
 		}
 
-		key := database.Name
-		if database.Environment != "" {
-			key = fmt.Sprintf("%s:%s", database.Name, database.Environment)
-		}
-
+		databasesCacheKey := getDatabasesCacheKey(database.Name)
 		value := databasesCacheValue{
 			db:   db,
 			name: database.Name,
 			ping: false,
 		}
-		cacheDatabase = append(cacheDatabase, key)
-		databasesCache.Store(key, value)
+		cacheDatabase = append(cacheDatabase, databasesCacheKey)
+		databasesCache.Store(databasesCacheKey, value)
 	}
 
 	lintDatabasesCache(cacheDatabase)
@@ -123,7 +116,8 @@ func loadScriptsGlobFile(path string) error {
 	}
 
 	for _, script := range data.Scripts {
-		if _, ok := databasesCache.Load(script.Database); !ok {
+		databasesCacheKey := getDatabasesCacheKey(script.Database)
+		if _, ok := databasesCache.Load(databasesCacheKey); !ok {
 			message := fmt.Sprintf("the database('%s') of the script('%s') was not found in the file('%s')",
 				script.Database, script.Name, globalConfig.DatabasesFile)
 			return errors.New(message)

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<scripts>
+    <script name="GetUser" database="ReadDb">
+        <![CDATA[
+            SELECT username, password
+            FROM `user`
+            WHERE username = :username
+        ]]>
+    </script>
+
+    <script name="ListUser" database="ReadDb">
+        <![CDATA[
+            SELECT username, password
+            FROM `user`
+            LIMIT 10 OFFSET 0
+        ]]>
+    </script>
+
+
+    <script name="AddUser" database="WriteDb">
+        <![CDATA[
+            INSERT INTO user (username, password)
+            VALUES (:username, :password)
+        ]]>
+    </script>
+</scripts>

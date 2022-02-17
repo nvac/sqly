@@ -1,6 +1,7 @@
 package sqly
 
 import (
+	"fmt"
 	"github.com/jmoiron/sqlx"
 	"sync"
 )
@@ -30,4 +31,12 @@ func lintDatabasesCache(cachedDatabase []string) {
 		return true
 	}
 	databasesCache.Range(f)
+}
+
+func getDatabasesCacheKey(database string) string {
+	result := database
+	if globalConfig.Environment != "" {
+		result = fmt.Sprintf("%s:%s", database, globalConfig.Environment)
+	}
+	return result
 }

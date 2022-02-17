@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<databases>
+    <database name="ReadDb"
+              environment="development"
+              driver="mysql"
+              source="user:password@tcp(127.0.0.1:3306)/test?charset=utf8mb4&amp;parseTime=True"
+              connMaxLifetime="30"
+              connMaxIdleTime="30"
+              maxIdleConns="2"
+              maxOpenConns="10"/>
+
+    <database name="WriteDb"
+              environment="development"
+              driver="mysql"
+              source="user:password@tcp(127.0.0.1:3306)/test?charset=utf8mb4&amp;parseTime=True"
+              connMaxLifetime="30"
+              connMaxIdleTime="30"
+              maxIdleConns="2"
+              maxOpenConns="10"
+    />
+</databases>
