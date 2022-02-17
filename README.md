@@ -141,4 +141,4 @@ func main() {
 ````
 
 ### License
-[MIT](LICENSE) © Richard Littauer
+[MIT](LICENSE) © nvac
