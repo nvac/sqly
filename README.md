@@ -44,7 +44,7 @@ An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on 
               maxIdleConns="2"
               maxOpenConns="10"
     />
-</database>
+</databases>
 ````
 
 #### 2. write sql script in xml file

@@ -20,7 +20,11 @@ func getScriptByName(name string) (*databasesCacheValue, *scriptsCacheValue, err
 
 	script := scriptsValue.(scriptsCacheValue)
 
-	databasesValue, ok := databasesCache.Load(script.database)
+	databasesKey := script.database
+	if globalConfig.Environment != "" {
+		databasesKey = fmt.Sprintf("%s:%s", script.database, globalConfig.Environment)
+	}
+	databasesValue, ok := databasesCache.Load(databasesKey)
 	if !ok {
 		return nil, nil, errors.New("not found database")
 	}
