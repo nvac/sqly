@@ -56,7 +56,7 @@ An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on 
 <?xml version="1.0" encoding="utf-8" ?>
 
 <scripts>
-    <script name="GetUser" database="ReadDb">
+    <script name="GetUser">
         <![CDATA[
             SELECT username, password
             FROM `user`
@@ -64,7 +64,7 @@ An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on 
         ]]>
     </script>
 
-    <script name="ListUser" database="ReadDb">
+    <script name="ListUser">
         <![CDATA[
             SELECT username, password
             FROM `user`
@@ -72,7 +72,7 @@ An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on 
         ]]>
     </script>
     
-    <script name="AddUser" database="WriteDb">
+    <script name="AddUser">
         <![CDATA[
             INSERT INTO user (username, password)
             VALUES (:username, :password)
@@ -90,6 +90,7 @@ package main
 import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/nvac/sqly"
 	"os"
 )
 
@@ -112,8 +113,13 @@ func main() {
 		panic(err)
 	}
 
+	readDb, err :=sqly.Connect("ReadDb")
+	if err != nil {
+		panic(err)
+	}
+	
 	var user User
-	if err := sqly.QueryRow("GetUser", &user, map[string]interface{}{
+	if err := readDb.QueryRow("GetUser", &user, map[string]interface{}{
 		"username": "lisa",
 	}); err != nil {
 		panic(err)
@@ -122,21 +128,40 @@ func main() {
 	}
 
 	var users []User
-	if err := sqly.QueryRows("ListUser", &users, map[string]interface{}{}); err != nil {
+	if err := readDb.QueryRows("ListUser", &users, map[string]interface{}{}); err != nil {
 		panic(err)
 	} else {
 		fmt.Println(users)
 	}
 
-	if result, err := sqly.Exec("AddUser", map[string]interface{}{
-	    "username": "root",
+	writeDb, err := sqly.Connect("WriteDb")
+	if err != nil {
+		panic(err)
+	}
+	if result, err := writeDb.Exec("AddUser", map[string]interface{}{
+		"username": "root",
 		"password": "123456",
 	}); err != nil {
 		panic(err)
-    } else {
+	} else {
 		fmt.Println(result.RowsAffected())
 		fmt.Println(result.LastInsertId())
-    }
+	}
+
+	tx, err := sqly.Begin("WriteDb")
+
+	if result, err := tx.Exec("AddUser", map[string]interface{}{
+		"username": "root",
+		"password": "123456",
+	}); err != nil {
+		if err := tx.Rollback(); err != nil {
+			panic(err)
+		}
+	} else {
+		fmt.Println(result.RowsAffected())
+		fmt.Println(result.LastInsertId())
+		tx.Commit()
+	}
 }
 ````
 

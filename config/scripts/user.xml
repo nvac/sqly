@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 
 <scripts>
-    <script name="GetUser" database="ReadDb">
+    <script name="GetUser">
         <![CDATA[
             SELECT username, password
             FROM `user`
@@ -9,7 +9,7 @@
         ]]>
     </script>
 
-    <script name="ListUser" database="ReadDb">
+    <script name="ListUser">
         <![CDATA[
             SELECT username, password
             FROM `user`
@@ -17,8 +17,7 @@
         ]]>
     </script>
 
-
-    <script name="AddUser" database="WriteDb">
+    <script name="AddUser">
         <![CDATA[
             INSERT INTO user (username, password)
             VALUES (:username, :password)

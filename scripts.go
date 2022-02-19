@@ -8,8 +8,7 @@ type scripts struct {
 }
 
 type script struct {
-	XMLName  xml.Name `xml:"script"`
-	Name     string   `xml:"name,attr"`
-	Database string   `xml:"database,attr"`
-	Content  string   `xml:",chardata"`
+	XMLName xml.Name `xml:"script"`
+	Name    string   `xml:"name,attr"`
+	Content string   `xml:",chardata"`
 }

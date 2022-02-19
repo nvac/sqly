@@ -12,31 +12,35 @@ import (
 	"time"
 )
 
-func getScriptByName(name string) (*databasesCacheValue, *scriptsCacheValue, error) {
+func getScriptByName(name string) (*scriptsCacheValue, error) {
 	scriptsValue, ok := scriptsCache.Load(name)
 	if !ok {
-		return nil, nil, errors.New("not found script")
+		return nil, errors.New("not found script")
 	}
 
 	script := scriptsValue.(scriptsCacheValue)
 
-	databasesCacheKey := getDatabasesCacheKey(script.database)
+	return &script, nil
+}
+
+func getDatabaseByName(databaseName string) (*databasesCacheValue, error) {
+	databasesCacheKey := getDatabasesCacheKey(databaseName)
 	databasesValue, ok := databasesCache.Load(databasesCacheKey)
 	if !ok {
-		return nil, nil, errors.New("not found database")
+		return nil, errors.New("not found database")
 	}
 
 	database := databasesValue.(databasesCacheValue)
 	if database.ping {
 		err := database.db.Ping()
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 
 		database.ping = true
 	}
 
-	return &database, &script, nil
+	return &database, nil
 }
 
 func loadDatabasesFile() error {
@@ -116,19 +120,11 @@ func loadScriptsGlobFile(path string) error {
 	}
 
 	for _, script := range data.Scripts {
-		databasesCacheKey := getDatabasesCacheKey(script.Database)
-		if _, ok := databasesCache.Load(databasesCacheKey); !ok {
-			message := fmt.Sprintf("the database('%s') of the script('%s') was not found in the file('%s')",
-				script.Database, script.Name, globalConfig.DatabasesFile)
-			return errors.New(message)
-		}
-
 		key := script.Name
 		value := scriptsCacheValue{
-			name:     script.Name,
-			database: script.Database,
-			content:  script.Content,
-			path:     path,
+			name:    script.Name,
+			content: script.Content,
+			path:    path,
 		}
 
 		if loadedValue, loaded := scriptsCache.LoadOrStore(key, value); loaded {

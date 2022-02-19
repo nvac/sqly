@@ -27,8 +27,13 @@ func TestQueryRow(t *testing.T) {
 		return
 	}
 
+	db, err := Connect("ReadDb")
+	if err != nil {
+		panic(err)
+	}
+
 	var users User
-	err = QueryRow("GetUser", &users, map[string]interface{}{
+	err = db.QueryRow("GetUser", &users, map[string]interface{}{
 		"username": "doovac",
 	})
 
@@ -47,11 +52,15 @@ func TestQueryRows(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Println(err.Error())
+		panic(err)
 	}
 
+	db, err := Connect("ReadDb")
+	if err != nil {
+		panic(err)
+	}
 	var users []User
-	if err := QueryRows("ListUser", &users, map[string]interface{}{}); err != nil {
+	if err := db.QueryRows("ListUser", &users, map[string]interface{}{}); err != nil {
 		fmt.Printf("db.NamedQuery failed, err:%v\n", err)
 		return
 	}
@@ -69,10 +78,12 @@ func TestExec(t *testing.T) {
 	})
 
 	if err != nil {
-		fmt.Println(err.Error())
+		panic(err)
 	}
 
-	if result, err := Exec("AddUser", map[string]interface{}{
+	db, err := Connect("WriteDb")
+
+	if result, err := db.Exec("AddUser", map[string]interface{}{
 		"username": "root",
 		"password": "123456",
 	}); err != nil {

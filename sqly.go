@@ -7,6 +7,10 @@ import (
 	"reflect"
 )
 
+type DB struct {
+	*sqlx.DB
+}
+
 func Init(config *Config) error {
 	if config.DatabasesFile == "" {
 		return errors.New("DatabasesFile is required")
@@ -33,21 +37,43 @@ func Init(config *Config) error {
 		return err
 	}
 
+	globalInit = true
 	return nil
 }
 
-func QueryRow(name string, dest interface{}, arg interface{}) error {
+func Connect(databaseName string) (*DB, error) {
+	if !globalInit {
+		return nil, errors.New("sqly has not been initialized, please use 'sqly.Init(&sqly.Config{})' to initialize")
+	}
+
+	databaseCache, err := getDatabaseByName(databaseName)
+	if err != nil {
+		return nil, err
+	}
+
+	if databaseCache.ping {
+		err := databaseCache.db.Ping()
+		if err != nil {
+			return nil, err
+		}
+		databaseCache.ping = true
+	}
+
+	return &DB{DB: databaseCache.db}, nil
+}
+
+func (db *DB) QueryRow(scriptName string, dest interface{}, arg interface{}) error {
 	t := reflect.TypeOf(dest)
 	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct {
 		return errors.New("dest must be ptr struct")
 	}
 
-	database, script, err := getScriptByName(name)
+	script, err := getScriptByName(scriptName)
 	if err != nil {
 		return err
 	}
 
-	rows, err := database.db.NamedQuery(script.content, arg)
+	rows, err := db.NamedQuery(script.content, arg)
 	if err != nil {
 		return err
 	}
@@ -65,18 +91,18 @@ func QueryRow(name string, dest interface{}, arg interface{}) error {
 	return nil
 }
 
-func QueryRows(name string, dest interface{}, arg interface{}) error {
+func (db *DB) QueryRows(scriptName string, dest interface{}, arg interface{}) error {
 	t := reflect.TypeOf(dest)
 	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Slice || t.Elem().Elem().Kind() != reflect.Struct {
 		return errors.New("dest must be ptr slice struct")
 	}
 
-	database, script, err := getScriptByName(name)
+	script, err := getScriptByName(scriptName)
 	if err != nil {
 		return err
 	}
 
-	rows, err := database.db.NamedQuery(script.content, arg)
+	rows, err := db.NamedQuery(script.content, arg)
 	if err != nil {
 		return err
 	}
@@ -87,11 +113,11 @@ func QueryRows(name string, dest interface{}, arg interface{}) error {
 	return err
 }
 
-func Exec(name string, arg interface{}) (sql.Result, error) {
-	database, script, err := getScriptByName(name)
+func (db *DB) Exec(scriptName string, arg interface{}) (sql.Result, error) {
+	script, err := getScriptByName(scriptName)
 	if err != nil {
 		return nil, err
 	}
 
-	return database.db.NamedExec(script.content, arg)
+	return db.NamedExec(script.content, arg)
 }
