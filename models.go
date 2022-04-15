@@ -1,6 +1,8 @@
 package sqly
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+)
 
 type databases struct {
 	XMLName   xml.Name   `xml:"databases"`
@@ -17,4 +19,15 @@ type database struct {
 	MaxOpenConns    *int     `xml:"maxOpenConns,attr"`
 	ConnMaxLifetime *int     `xml:"connMaxLifetime,attr"`
 	ConnMaxIdleTime *int     `xml:"connMaxIdleTime,attr"`
+}
+
+type scripts struct {
+	XMLName xml.Name `xml:"scripts"`
+	Scripts []script `xml:"script"`
+}
+
+type script struct {
+	XMLName xml.Name `xml:"script"`
+	Name    string   `xml:"name,attr"`
+	Content string   `xml:",chardata"`
 }

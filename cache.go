@@ -2,8 +2,9 @@ package sqly
 
 import (
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"sync"
+
+	"github.com/jmoiron/sqlx"
 )
 
 var scriptsCache = sync.Map{}

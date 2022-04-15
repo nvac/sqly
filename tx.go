@@ -3,8 +3,9 @@ package sqly
 import (
 	"database/sql"
 	"errors"
-	"github.com/jmoiron/sqlx"
 	"reflect"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Tx struct {
