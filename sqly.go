@@ -3,8 +3,9 @@ package sqly
 import (
 	"database/sql"
 	"errors"
-	"github.com/jmoiron/sqlx"
 	"reflect"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type DB struct {
@@ -23,11 +24,6 @@ func Init(config *Config) error {
 	globalConfig = config
 
 	err := loadDatabasesFile()
-	if err != nil {
-		return err
-	}
-
-	err = watchDatabasesFile()
 	if err != nil {
 		return err
 	}

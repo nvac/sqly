@@ -4,12 +4,11 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/fsnotify/fsnotify"
-	"github.com/gravityblast/globnotify"
-	"github.com/jmoiron/sqlx"
 	"io/ioutil"
 	"path/filepath"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 )
 
 func getScriptByName(name string) (*scriptsCacheValue, error) {
@@ -144,53 +143,6 @@ func loadScriptsGlobFiles() error {
 			return err
 		}
 	}
-	return nil
-}
-
-func watchDatabasesFile() error {
-	watcher, err := globnotify.New(globalConfig.DatabasesFile)
-	if err != nil {
-		return err
-	}
-	events, err := watcher.Watch()
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		for {
-			select {
-			case event := <-events:
-				fmt.Printf("%+v\n", event)
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					_ = loadDatabasesFile()
-				}
-			}
-		}
-	}()
-
-	return nil
-}
-
-func watchScriptsGlobFiles(path string) error {
-	watcher, err := globnotify.New(path)
-	if err != nil {
-		return err
-	}
-	events, err := watcher.Watch()
-	if err != nil {
-		return err
-	}
-	done := make(chan bool)
-	go func() {
-		for {
-			select {
-			case event := <-events:
-				fmt.Printf("%+v\n", event)
-			}
-		}
-	}()
-	<-done
 	return nil
 }
 
