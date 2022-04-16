@@ -3,7 +3,6 @@ package sqly
 import (
 	"database/sql"
 	"errors"
-	"reflect"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -37,7 +36,7 @@ func Init(config *Config) error {
 	return nil
 }
 
-func Connect(databaseName string) (*DB, error) {
+func connect(databaseName string) (*DB, error) {
 	if !globalInit {
 		return nil, errors.New("sqly has not been initialized, please use 'sqly.Init(&sqly.Config{})' to initialize")
 	}
@@ -58,58 +57,56 @@ func Connect(databaseName string) (*DB, error) {
 	return &DB{DB: databaseCache.db}, nil
 }
 
-func (db *DB) QueryRow(scriptName string, dest interface{}, arg interface{}) error {
-	t := reflect.TypeOf(dest)
-	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct {
-		return errors.New("dest must be ptr struct")
-	}
+func QueryRow[T any](databaseName, scriptName string, arg any) (*T, error) {
+	db, _ := connect(databaseName)
 
 	script, err := getScriptByName(scriptName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	rows, err := db.NamedQuery(script.content, arg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer rows.Close()
 
+	var dest T
 	for rows.Next() {
 		err := rows.StructScan(dest)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		break
 	}
 
-	return nil
+	return &dest, nil
 }
 
-func (db *DB) QueryRows(scriptName string, dest interface{}, arg interface{}) error {
-	t := reflect.TypeOf(dest)
-	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Slice || t.Elem().Elem().Kind() != reflect.Struct {
-		return errors.New("dest must be ptr slice struct")
-	}
+func QueryRows[T any](databaseName, scriptName string, arg any) (*[]T, error) {
+	db, _ := connect(databaseName)
 
 	script, err := getScriptByName(scriptName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	rows, err := db.NamedQuery(script.content, arg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer rows.Close()
 
+	var dest []T
 	err = sqlx.StructScan(rows, dest)
-	return err
+	return &dest, err
 }
 
-func (db *DB) Exec(scriptName string, arg interface{}) (sql.Result, error) {
+func Exec(databaseName, scriptName string, arg any) (sql.Result, error) {
+	db, _ := connect(databaseName)
+
 	script, err := getScriptByName(scriptName)
 	if err != nil {
 		return nil, err
