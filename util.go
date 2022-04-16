@@ -1,14 +1,13 @@
 package sqly
 
 import (
+	"database/sql"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"time"
-
-	"github.com/jmoiron/sqlx"
 )
 
 func getScriptByName(name string) (*scriptsCacheValue, error) {
@@ -68,7 +67,7 @@ func loadDatabasesFile() error {
 			source = globalConfig.SourceDecryptFunc(database.Source)
 		}
 
-		db, err := sqlx.Open(database.Driver, source)
+		db, err := sql.Open(database.Driver, source)
 		if err != nil {
 			return err
 		}
@@ -153,4 +152,17 @@ func contains(values []string, target string) bool {
 		}
 	}
 	return false
+}
+
+// ArgMapToNamed
+// @description:
+// @param args map[string]any
+// @return []sql.NamedArg
+func argMapToNamed(args map[string]any) []sql.NamedArg {
+	var result []sql.NamedArg
+	for name, value := range args {
+		result = append(result, sql.Named(name, value))
+	}
+
+	return result
 }
