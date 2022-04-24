@@ -44,7 +44,7 @@ func (tx *Tx) QueryRow(scriptName string, dest interface{}, args map[string]any)
 		return err
 	}
 
-	namedArgs := argMapToNamed(args)
+	namedArgs := argsToNamedArgs(args)
 	rows, err := tx.Tx.Query(script.content, namedArgs)
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (tx *Tx) QueryRows(scriptName string, dest interface{}, args map[string]any
 		return err
 	}
 
-	namedArgs := argMapToNamed(args)
+	namedArgs := argsToNamedArgs(args)
 	rows, err := tx.Tx.Query(script.content, namedArgs)
 	if err != nil {
 		return err
