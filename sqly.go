@@ -1,112 +1,121 @@
 package sqly
 
 import (
-	"database/sql"
-	"errors"
+    "context"
+    "database/sql"
+    "errors"
 )
 
 type DB struct {
-	*sql.DB
+    *sql.DB
 }
 
 func Init(config Config) error {
-	if config.DatabasesFile == "" {
-		return errors.New("DatabasesFile is required")
-	}
+    if config.DatabasesFile == "" {
+        return errors.New("DatabasesFile is required")
+    }
 
-	if config.ScriptsGlobFiles == "" {
-		return errors.New("ScriptsGlobFiles is required")
-	}
+    if config.ScriptsGlobFiles == "" {
+        return errors.New("ScriptsGlobFiles is required")
+    }
 
-	globalConfig = &config
+    globalConfig = &config
 
-	err := loadDatabasesFile()
-	if err != nil {
-		return err
-	}
+    err := loadDatabasesFile()
+    if err != nil {
+        return err
+    }
 
-	err = loadScriptsGlobFiles()
-	if err != nil {
-		return err
-	}
+    err = loadScriptsGlobFiles()
+    if err != nil {
+        return err
+    }
 
-	globalInit = true
-	return nil
+    globalInit = true
+    return nil
 }
 
 func QueryRow[T any](databaseName, scriptName string, args map[string]any) (*T, error) {
-	db, _ := connect(databaseName)
+    db, _ := connect(databaseName)
 
-	script, err := getScriptByName(scriptName)
-	if err != nil {
-		return nil, err
-	}
+    script, err := getScriptByName(scriptName)
+    if err != nil {
+        return nil, err
+    }
 
-	namedArgs := argMapToNamed(args)
-	row := db.QueryRow(script.content, namedArgs)
-	if err != nil {
-		return nil, err
-	}
+    namedArgs := argsToNamedArgs(args)
+    rows, err := db.Query(script.content, namedArgs...)
+    if err != nil {
+        return nil, err
+    }
 
-	var dest T
-	err = row.Scan(dest)
-	if err != nil {
-		return nil, err
-	}
+    result, err := scanRowsToStruct[T](rows)
+    if err != nil {
+        return nil, err
+    }
 
-	return &dest, nil
+    return &result[0], nil
 }
 
 func QueryRows[T any](databaseName, scriptName string, arg map[string]any) (*[]T, error) {
-	db, _ := connect(databaseName)
+    db, _ := connect(databaseName)
 
-	script, err := getScriptByName(scriptName)
-	if err != nil {
-		return nil, err
-	}
+    script, err := getScriptByName(scriptName)
+    if err != nil {
+        return nil, err
+    }
 
-	rows, err := db.Query(script.content, arg)
-	if err != nil {
-		return nil, err
-	}
+    rows, err := db.Query(script.content, arg)
+    if err != nil {
+        return nil, err
+    }
 
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+    result, err := scanRowsToStruct[T](rows)
 
-	var dest []T
-	err = rows.Scan(rows, dest)
-	return &dest, err
+    return &result, err
 }
 
-func Exec(databaseName, scriptName string, arg map[string]any) (sql.Result, error) {
-	db, _ := connect(databaseName)
+func Exec(databaseName, scriptName string, args map[string]any) (sql.Result, error) {
+    db, _ := connect(databaseName)
 
-	script, err := getScriptByName(scriptName)
-	if err != nil {
-		return nil, err
-	}
+    script, err := getScriptByName(scriptName)
+    if err != nil {
+        return nil, err
+    }
 
-	return db.Exec(script.content, arg)
+    namedArgs := argsToNamedArgs(args)
+    return db.Exec(script.content, namedArgs)
+}
+
+func ExecContext(ctx context.Context, databaseName, scriptName string, args map[string]any) (sql.Result, error) {
+    db, _ := connect(databaseName)
+
+    script, err := getScriptByName(scriptName)
+    if err != nil {
+        return nil, err
+    }
+
+    namedArgs := argsToNamedArgs(args)
+    return db.ExecContext(ctx, script.content, namedArgs)
 }
 
 func connect(databaseName string) (*DB, error) {
-	if !globalInit {
-		return nil, errors.New("sqly has not been initialized, please use 'sqly.Init(&sqly.Config{})' to initialize")
-	}
+    if !globalInit {
+        return nil, errors.New("sqly has not been initialized, please use 'sqly.Init(&sqly.Config{})' to initialize")
+    }
 
-	databaseCache, err := getDatabaseByName(databaseName)
-	if err != nil {
-		return nil, err
-	}
+    databaseCache, err := getDatabaseByName(databaseName)
+    if err != nil {
+        return nil, err
+    }
 
-	if databaseCache.ping {
-		err := databaseCache.db.Ping()
-		if err != nil {
-			return nil, err
-		}
-		databaseCache.ping = true
-	}
+    if databaseCache.ping {
+        err := databaseCache.db.Ping()
+        if err != nil {
+            return nil, err
+        }
+        databaseCache.ping = true
+    }
 
-	return &DB{DB: databaseCache.db}, nil
+    return &DB{DB: databaseCache.db}, nil
 }

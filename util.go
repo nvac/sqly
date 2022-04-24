@@ -5,8 +5,10 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"go/ast"
 	"io/ioutil"
 	"path/filepath"
+	"reflect"
 	"time"
 )
 
@@ -154,15 +156,52 @@ func contains(values []string, target string) bool {
 	return false
 }
 
-// ArgMapToNamed
-// @description:
-// @param args map[string]any
-// @return []sql.NamedArg
-func argMapToNamed(args map[string]any) []sql.NamedArg {
-	var result []sql.NamedArg
+func argsToNamedArgs(args map[string]any) []any {
+	var result []any
 	for name, value := range args {
 		result = append(result, sql.Named(name, value))
 	}
+	return result
+}
 
+func scanRowsToStruct[T any](rows *sql.Rows) ([]T, error) {
+	var destSlice []T
+	destType := reflect.ValueOf(destSlice).Type().Elem()
+	fieldNames := parseTag(destType)
+	for rows.Next() {
+		var dest T
+		var values []interface{}
+		elem := reflect.ValueOf(&dest).Elem()
+		for _, fieldName := range fieldNames {
+			elem.FieldByName(fieldName).Addr().Interface()
+		}
+
+		if err := rows.Scan(values...); err != nil {
+			return nil, err
+		}
+		destSlice = append(destSlice, dest)
+	}
+	return destSlice, nil
+}
+
+func parseTag(dest interface{}) []string {
+	modelType := reflect.Indirect(reflect.ValueOf(dest)).Type()
+	var result []string
+	for i := 0; i < modelType.NumField(); i++ {
+		p := modelType.Field(i)
+		if !p.Anonymous && ast.IsExported(p.Name) {
+			v, ok := p.Tag.Lookup("sql")
+			if !ok || v == "" {
+				result = append(result, p.Name)
+				continue
+			}
+
+			if v == "-" {
+				continue
+			}
+
+			result = append(result, v)
+		}
+	}
 	return result
 }
