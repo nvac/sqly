@@ -36,7 +36,10 @@ func Init(config Config) error {
 }
 
 func QueryRow[T any](databaseName, scriptName string, args map[string]any) (*T, error) {
-    db, _ := connect(databaseName)
+    db, err := connect(databaseName)
+    if err != nil {
+        return nil, err
+    }
 
     script, err := getScriptByName(scriptName)
     if err != nil {
@@ -60,7 +63,10 @@ func QueryRow[T any](databaseName, scriptName string, args map[string]any) (*T, 
 }
 
 func QueryRows[T any](databaseName, scriptName string, args map[string]any) ([]T, error) {
-    db, _ := connect(databaseName)
+    db, err := connect(databaseName)
+    if err != nil {
+        return nil, err
+    }
 
     script, err := getScriptByName(scriptName)
     if err != nil {
@@ -82,7 +88,10 @@ func QueryRows[T any](databaseName, scriptName string, args map[string]any) ([]T
 }
 
 func Exec(databaseName, scriptName string, args map[string]any) (sql.Result, error) {
-    db, _ := connect(databaseName)
+    db, err := connect(databaseName)
+    if err != nil {
+        return nil, err
+    }
 
     script, err := getScriptByName(scriptName)
     if err != nil {

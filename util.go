@@ -45,10 +45,14 @@ func loadDatabasesFile() error {
     if globalConfig.DatabasesFile == "" {
         return errors.New("miss DatabasesFile")
     }
-    file, _ := ioutil.ReadFile(globalConfig.DatabasesFile)
+    file, err := ioutil.ReadFile(globalConfig.DatabasesFile)
+    if err != nil {
+        return err
+    }
 
     data := new(databases)
-    if err := xml.Unmarshal(file, data); err != nil {
+    err = xml.Unmarshal(file, data)
+    if err != nil {
         return err
     }
 

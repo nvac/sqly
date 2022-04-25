@@ -1,6 +1,6 @@
 package sqly
 
 var (
-	globalInit   bool
-	globalConfig *Config
+    globalInit   bool
+    globalConfig *Config
 )

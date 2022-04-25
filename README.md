@@ -1,25 +1,30 @@
 ## sqly
+
 <hr/>
 
 An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on xml files and named query/exec
 
 <p style="color: orangered">this repo is under development, please do not use it in production.</p>
 
-
 ### install
-``go get github.com/nvac/sqly``
 
+``go get github.com/nvac/sqly``
 
 ### Usage
 
 #### 1. set database config in xml file
+
 * name: needs to be unique in same environment
 * environment: custom string，runtime environment
 * source: data source name
-* connMaxLifetime(seconds): sets the maximum amount of time a connection may be reused. . if default values is required, remove the attr
-* connMaxIdleTime(seconds): sets the maximum amount of time a connection may be idle. if default values is required, remove the attr
-* maxIdleConns: sets the maximum number of connections in the idle connection pool. if default values is required, remove the attr
-* maxOpenConns: sets the maximum number of open connections to the database. if default values is required, remove the attr
+* connMaxLifetime(seconds): sets the maximum amount of time a connection may be reused. . if default values is required,
+  remove the attr
+* connMaxIdleTime(seconds): sets the maximum amount of time a connection may be idle. if default values is required,
+  remove the attr
+* maxIdleConns: sets the maximum number of connections in the idle connection pool. if default values is required,
+  remove the attr
+* maxOpenConns: sets the maximum number of open connections to the database. if default values is required, remove the
+  attr
 
 ````xml
 <?xml version="1.0" encoding="utf-8" ?>
@@ -48,6 +53,7 @@ An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on 
 ````
 
 #### 2. write sql script in xml file
+
 * name: needs to be unique
 * database: using the above configured database
 * content: ensure in CDATA
@@ -80,7 +86,6 @@ An easy-to-use extension for [sqlx](https://github.com/jmoiron/sqlx) ，base on 
     </script>
 </scripts>
 ````
-
 
 3. inti & use sqly
 
@@ -166,4 +171,5 @@ func main() {
 ````
 
 ### License
+
 [MIT](LICENSE) © nvac
