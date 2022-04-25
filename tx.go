@@ -3,11 +3,12 @@ package sqly
 import (
 	"database/sql"
 	"errors"
+	"github.com/jmoiron/sqlx"
 	"reflect"
 )
 
 type Tx struct {
-	*sql.Tx
+	*sqlx.Tx
 	DatabaseName string
 }
 
@@ -20,7 +21,7 @@ func Begin(databaseName string) (*Tx, error) {
 	if err != nil {
 		return nil, err
 	}
-	tx, err := database.db.Begin()
+	tx, err := database.db.Beginx()
 
 	return &Tx{Tx: tx, DatabaseName: databaseName}, err
 }
@@ -33,56 +34,51 @@ func (tx *Tx) Commit() error {
 	return tx.Tx.Rollback()
 }
 
-func (tx *Tx) QueryRow(scriptName string, dest interface{}, args map[string]any) error {
-	t := reflect.TypeOf(dest)
-	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Struct {
-		return errors.New("dest must be ptr struct")
-	}
-
+func TxQueryRow[T any](tx *Tx, scriptName string, args map[string]any) (*T, error) {
 	script, err := getScriptByName(scriptName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	namedArgs := argsToNamedArgs(args)
-	rows, err := tx.Tx.Query(script.content, namedArgs)
+	namedScript, namedArgs, err := sqlx.Named(script.content, args)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	defer rows.Close()
+	row := tx.Tx.QueryRowx(namedScript, namedArgs...)
 
-	for rows.Next() {
-		err := rows.Scan(dest)
-		if err != nil {
-			return err
-		}
-		break
+	var t T
+	err = row.StructScan(&t)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	return &t, nil
 }
 
-func (tx *Tx) QueryRows(scriptName string, dest interface{}, args map[string]any) error {
+func TxQueryRows[T any](tx *Tx, scriptName string, dest interface{}, args map[string]any) ([]T, error) {
 	t := reflect.TypeOf(dest)
 	if t.Kind() != reflect.Ptr || t.Elem().Kind() != reflect.Slice || t.Elem().Elem().Kind() != reflect.Struct {
-		return errors.New("dest must be ptr slice struct")
+		return nil, errors.New("dest must be ptr slice struct")
 	}
 
 	script, err := getScriptByName(scriptName)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	namedArgs := argsToNamedArgs(args)
-	rows, err := tx.Tx.Query(script.content, namedArgs)
+	rows, err := tx.Tx.NamedQuery(script.content, args)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	defer rows.Close()
-	err = rows.Scan(dest)
-	return err
+	var ts []T
+	err = rows.StructScan(ts)
+	if err != nil {
+		return nil, err
+	}
+
+	return ts, nil
 }
 
 func (tx *Tx) Exec(scriptName string, args map[string]any) (sql.Result, error) {

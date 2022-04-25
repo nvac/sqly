@@ -1,8 +1,8 @@
 package sqly
 
 import (
-	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"sync"
 )
 
@@ -10,7 +10,7 @@ var scriptsCache = sync.Map{}
 var databasesCache = sync.Map{}
 
 type databasesCacheValue struct {
-	db   *sql.DB
+	db   *sqlx.DB
 	name string
 	ping bool
 }

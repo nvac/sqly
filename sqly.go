@@ -1,13 +1,13 @@
 package sqly
 
 import (
-    "context"
     "database/sql"
     "errors"
+    "github.com/jmoiron/sqlx"
 )
 
 type DB struct {
-    *sql.DB
+    *sqlx.DB
 }
 
 func Init(config Config) error {
@@ -43,21 +43,23 @@ func QueryRow[T any](databaseName, scriptName string, args map[string]any) (*T, 
         return nil, err
     }
 
-    namedArgs := argsToNamedArgs(args)
-    rows, err := db.Query(script.content, namedArgs...)
+    namedScript, namedArgs, err := sqlx.Named(script.content, args)
     if err != nil {
         return nil, err
     }
 
-    result, err := scanRowsToStruct[T](rows)
+    row := db.QueryRowx(namedScript, namedArgs...)
+
+    var t T
+    err = row.StructScan(&t)
     if err != nil {
         return nil, err
     }
 
-    return &result[0], nil
+    return &t, nil
 }
 
-func QueryRows[T any](databaseName, scriptName string, arg map[string]any) (*[]T, error) {
+func QueryRows[T any](databaseName, scriptName string, args map[string]any) ([]T, error) {
     db, _ := connect(databaseName)
 
     script, err := getScriptByName(scriptName)
@@ -65,14 +67,18 @@ func QueryRows[T any](databaseName, scriptName string, arg map[string]any) (*[]T
         return nil, err
     }
 
-    rows, err := db.Query(script.content, arg)
+    rows, err := db.NamedQuery(script.content, args)
     if err != nil {
         return nil, err
     }
 
-    result, err := scanRowsToStruct[T](rows)
+    var ts []T
+    err = rows.StructScan(ts)
+    if err != nil {
+        return nil, err
+    }
 
-    return &result, err
+    return ts, err
 }
 
 func Exec(databaseName, scriptName string, args map[string]any) (sql.Result, error) {
@@ -83,39 +89,5 @@ func Exec(databaseName, scriptName string, args map[string]any) (sql.Result, err
         return nil, err
     }
 
-    namedArgs := argsToNamedArgs(args)
-    return db.Exec(script.content, namedArgs)
-}
-
-func ExecContext(ctx context.Context, databaseName, scriptName string, args map[string]any) (sql.Result, error) {
-    db, _ := connect(databaseName)
-
-    script, err := getScriptByName(scriptName)
-    if err != nil {
-        return nil, err
-    }
-
-    namedArgs := argsToNamedArgs(args)
-    return db.ExecContext(ctx, script.content, namedArgs)
-}
-
-func connect(databaseName string) (*DB, error) {
-    if !globalInit {
-        return nil, errors.New("sqly has not been initialized, please use 'sqly.Init(&sqly.Config{})' to initialize")
-    }
-
-    databaseCache, err := getDatabaseByName(databaseName)
-    if err != nil {
-        return nil, err
-    }
-
-    if databaseCache.ping {
-        err := databaseCache.db.Ping()
-        if err != nil {
-            return nil, err
-        }
-        databaseCache.ping = true
-    }
-
-    return &DB{DB: databaseCache.db}, nil
+    return db.NamedExec(script.content, args)
 }
