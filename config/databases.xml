@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<databases>
+    <database name="ReadDb"
+              environment="debug"
+              driver="postgres"
+              source="postgres://postgres:123456@localhost:5432/uni_code?sslmode=disable"
+              connMaxLifetime="30"
+              connMaxIdleTime="30"
+              maxIdleConns="2"
+              maxOpenConns="10"/>
+</databases>

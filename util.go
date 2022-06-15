@@ -104,7 +104,7 @@ func loadDatabasesFile() error {
         databasesCache.Store(databasesCacheKey, value)
     }
 
-    lintDatabasesCache(cacheDatabase)
+    initDatabasesCache(cacheDatabase)
 
     return nil
 }
@@ -168,7 +168,7 @@ func connect(databaseName string) (*DB, error) {
         return nil, err
     }
 
-    if databaseCache.ping {
+    if !databaseCache.ping {
         err := databaseCache.db.Ping()
         if err != nil {
             return nil, err

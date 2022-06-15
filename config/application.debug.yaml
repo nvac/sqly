@@ -1,0 +1,8 @@
+app:
+  name: ""
+  env: ""
+  port: 8080
+
+log:
+  level: "info"
+  filename: "app.log"

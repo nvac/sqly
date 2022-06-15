@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+
+<scripts>
+    <script name="GetUser">
+        <![CDATA[
+            SELECT username, password
+            FROM `users`
+            WHERE username = :username
+        ]]>
+    </script>
+
+    <script name="ListUser">
+        <![CDATA[
+            SELECT username, password
+            FROM `users`
+            LIMIT 10 OFFSET 0
+        ]]>
+    </script>
+
+    <script name="AddUser">
+        <![CDATA[
+            INSERT INTO user (username, password)
+            VALUES (:username, :password)
+        ]]>
+    </script>
+
+    <script name="GetUserAuth">
+        <![CDATA[
+            SELECT `username`, `password`
+            FROM `user`
+            WHERE `username` = :username
+        ]]>
+    </script>
+</scripts>

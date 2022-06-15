@@ -22,7 +22,7 @@ type scriptsCacheValue struct {
     path     string
 }
 
-func lintDatabasesCache(cachedDatabase []string) {
+func initDatabasesCache(cachedDatabase []string) {
     f := func(key interface{}, value interface{}) bool {
         keyStr := key.(string)
         if !contains(cachedDatabase, keyStr) {
